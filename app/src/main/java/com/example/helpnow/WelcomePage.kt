@@ -19,7 +19,7 @@ class WelcomePage : AppCompatActivity() {
 
         // Corrected click listener using lambda expression (preferred)
         registerButton.setOnClickListener {
-            val intent = Intent(this@WelcomePage, Register::class.java) // Use context explicitly
+            val intent = Intent(this@WelcomePage, RegisterActivity::class.java) // Use context explicitly
             startActivity(intent)
         }
 
@@ -27,7 +27,7 @@ class WelcomePage : AppCompatActivity() {
 
         // Corrected click listener using lambda expression (preferred)
         loginButton.setOnClickListener {
-            val intent = Intent(this@WelcomePage, Login ::class.java) // Use context explicitly
+            val intent = Intent(this@WelcomePage, LoginActivity ::class.java) // Use context explicitly
             startActivity(intent)
         }
 

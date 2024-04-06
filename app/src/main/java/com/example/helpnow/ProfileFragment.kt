@@ -21,6 +21,13 @@ class ProfileFragment : Fragment() {
     private var param1: String? = null
     private var param2: String? = null
 
+    private val fragmentManager = requireActivity().supportFragmentManager
+    val transaction = fragmentManager.beginTransaction()
+    val destinationFragment = MedicalFragment() // Assuming you have a DestinationFragment class
+    transaction.replace(R.id.ProfileFragment, MedicalFragment)
+    transaction.addToBackStack(null)
+    transaction.commit()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {

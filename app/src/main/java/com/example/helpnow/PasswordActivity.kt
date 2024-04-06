@@ -1,5 +1,6 @@
 package com.example.helpnow
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -41,6 +42,8 @@ class PasswordActivity : AppCompatActivity() { // Rename class for clarity
                     // Save password (implement your storage mechanism)
                     Toast.makeText(this, "Password created successfully!", Toast.LENGTH_SHORT).show()
                     // Go to next activity or perform other actions
+                    val intent = Intent(this, Buttons::class.java) // Replace with your next page's activity class
+                    startActivity(intent)
                 } else {
                     Toast.makeText(this, "Passwords don't match!", Toast.LENGTH_SHORT).show()
                 }
