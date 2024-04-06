@@ -26,7 +26,7 @@
         app:cornerRadius="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="545dp" />
+        tools:layout_editor_absoluteY="539dp" />
 
     <Button
         android:id="@+id/login"
