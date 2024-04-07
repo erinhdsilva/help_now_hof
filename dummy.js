@@ -52,5 +52,5 @@ app.get("/request-ipfs-data", async (req, res) => {
 
 // Server Setup
 app.listen(port, () => {
-    console.log(server is running at ${port});
+    console.log(`server is running at ${port}`);
 });
