@@ -18,6 +18,19 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
+//dependencyResolutionManagement {
+//    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+//    repositories {
+//        google()
+//        mavenCentral()
+//        maven {
+//            run { "https://jitpack.io" } // Add this line for jitpack.io repository
+//
+//        }
+//    }
+//}
+
+
 
 rootProject.name = "HelpNow"
 include(":app")

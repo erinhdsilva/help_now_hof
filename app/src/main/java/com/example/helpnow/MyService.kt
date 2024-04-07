@@ -1,69 +1,65 @@
 package com.example.helpnow
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
+import android.location.Location
 import android.os.IBinder
 import android.telephony.SmsManager
-import androidx.annotation.Nullable
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
+import com.github.tbouron.shakedetector.library.ShakeDetector
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.OnSuccessListener
 
 class MyService : Service() {
-
-    private val FOREGROUND_ID = 115 // Notification ID
-    private val CHANNEL_ID = "MY_ID" // Notification channel ID
-
     private var isRunning = false
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private val smsManager: SmsManager = SmsManager.getDefault()
-    private var myLocation = "Location not available"
+    private val manager: SmsManager = SmsManager.getDefault()
+    private var myLocation: String = ""
+
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
+    }
 
     override fun onCreate() {
         super.onCreate()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        // Check if location permissions are granted
-        if (checkLocationPermissions()) {
-            requestLocationUpdates()
-        }
-    }
-
-    private fun checkLocationPermissions(): Boolean {
-        return (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-    }
-
-    private fun requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) {
             return
         }
-        val addOnSuccessListener = fusedLocationClient.lastLocation
+        fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
-                myLocation = location?.let {
-                    "http://maps.google.com/maps?q=loc:${location.latitude},${location.longitude}"
-                } ?: "Unable to Find Location :("
-            }
-    }
+                sendSmsWithLocation()
+                myLocation = if (location != null) {
+                    location.latitude
+                    location.longitude
 
-    @Nullable
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+                    "http://maps.google.com/maps?q=loc:${location.latitude},${location.longitude}"
+                } else {
+                    "http://maps.google.com/maps?q=loc:26.800425,81.023964"
+
+//                    "Unable to Find Location :("
+
+                }
+            }
+
+        ShakeDetector.create(this) {
+//            val sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE)
+//            val ENUM = sharedPreferences.getString("ENUM", "NONE")
+//            if (!ENUM.equals("NONE", ignoreCase = true)) {
+                manager.sendTextMessage(7875942986.toString(), null, "Im in Trouble!\nSending My Location :\n$myLocation", null, null)
+            }
+//        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -73,48 +69,37 @@ class MyService : Service() {
                 stopSelf()
             }
         } else {
-            // Create notification for foreground service
-            createNotification()
+            val notificationIntent = Intent(this, MainActivity::class.java)
+            val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_IMMUTABLE)
 
-            isRunning = true
-        }
-        return START_NOT_STICKY
-    }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channel = NotificationChannel("MYID", "CHANNELFOREGROUND", NotificationManager.IMPORTANCE_DEFAULT)
+                val m = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                m.createNotificationChannel(channel)
 
-    @SuppressLint("ForegroundServiceType")
-    private fun createNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "WSecure Service",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notification for WSecure service"
+//                val notification = Notification.Builder(this, "MYID")
+//                    .setContentTitle("Women Safety")
+//                    .setContentText("Shake Device to Send SOS")
+//                    .setSmallIcon(R.drawable.baseline_account_box_24)
+//                    .setContentIntent(pendingIntent)
+//                    .build()
+//                startForeground(115, notification)
+//                isRunning = true
+//                return START_NOT_STICKY
             }
-
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
         }
-
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("WSecure")
-            .setContentText("Click the button to Send the Emergency Alert")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        startForeground(FOREGROUND_ID, notification)
+        return super.onStartCommand(intent, flags, startId)
     }
 
-    // Function to send SMS (can be called from other parts of your app)
-    fun sendSMS() {
-        val sharedPreferences = getSharedPreferences("MySharedPref", Context.MODE_PRIVATE)
-        val emergencyContactNumber = sharedPreferences.getString("ENUM", null)
-        if (emergencyContactNumber.isNullOrEmpty().not()) {
-            // ... send SMS logic ...
+    private fun sendSmsWithLocation() {
+//        val sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE)
+//        val ENUM = sharedPreferences.getString("ENUM", "NONE")
+//        if (!ENUM.equals("NONE", ignoreCase = true)) {
+            manager.sendTextMessage(7875942986.toString(), null, "Im in Trouble!\nSending My Location :\n$myLocation", null, null)
         }
+    //}
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }
