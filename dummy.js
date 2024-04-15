@@ -18,7 +18,7 @@ app.use(cors())
 app.get("/request-ipfs-data", async (req, res) => {
 
     const data = JSON.stringify({
-        name : "disha"
+        name : "erin"
     });
     // const data = req.body()
 
